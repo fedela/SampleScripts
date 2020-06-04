@@ -1,26 +1,21 @@
-﻿
-# Use .\AzStorageInfo.ps1 -ResourceGroup RG_NAME
-# Leaves the output in out.csv in the current directory
-
-param ($ResourceGroup)
+﻿param ($ResourceGroup)
 $output = @()
-$RG = $ResourceGroup
 
-$VMs = @(Get-AzVM -ResourceGroupName $RG)
+$VMs = @(Get-AzVM -ResourceGroupName $ResourceGroup)
 
 
 foreach ($VM in $VMs)
 {
 
     Write-Verbose "$($VM.name) start" 
-    $disk = Get-AzDisk -ResourceGroupName $RG -DiskName $VM.StorageProfile.OsDisk.Name
-    $output += @{
+    $disk = Get-AzDisk -ResourceGroupName $ResourceGroup -DiskName $VM.StorageProfile.OsDisk.Name
+    $output += [PSCustomObject]@{
                     "VMName"         = $VM.name
                     "OS"             = $VM.StorageProfile.OsDisk.OsType
                     "DiskType"       = "OS"
                     "DiskName"       = $disk.Name
                     "DiskSize"       = $disk.DiskSizeGB
-                    "DiskSKU"        = $disk.Sku
+                    "DiskSKU"        = $disk.Sku.Name
                     "IOPSRead"       = $disk.DiskIOPSReadOnly
                     "IOPSReadWrite"  = $disk.DiskIOPSReadWrite
                     "MBPSRead"       = $disk.DiskMBpsReadOnly
@@ -29,13 +24,14 @@ foreach ($VM in $VMs)
 
     foreach ($DataDisk in $VM.StorageProfile.DataDisks)
     { 
-        $disk = Get-AzDisk -ResourceGroupName $RG -DiskName $DataDisk.Name
-        $output += @{
+        $disk = Get-AzDisk -ResourceGroupName $ResourceGroup -DiskName $DataDisk.Name
+        $output += [PSCustomObject]@{
                         "VMName"         = $VM.name
                         "OS"             = $VM.StorageProfile.OsDisk.OsType
                         "DiskType"       = "Data"
                         "DiskName"       = $disk.Name
                         "DiskSize"       = $disk.DiskSizeGB
+                        "DiskSKU"        = $disk.Sku.Name
                         "IOPSRead"       = $disk.DiskIOPSReadOnly
                         "IOPSReadWrite"  = $disk.DiskIOPSReadWrite
                         "MBPSRead"       = $disk.DiskMBpsReadOnly
@@ -45,8 +41,6 @@ foreach ($VM in $VMs)
 
     Write-Verbose "$($VM.name) end"
 }
-"VM Name,OS,Disk type,Disk Name, Disk Size,IOPS,MBPS" | out-file -FilePath .\out.csv -Force
-foreach ($item in $output)
-{
-    "$($item.VMName),$($item.OS),$($item.DiskType),$($item.DiskName),$($item.DiskSize),$($item.IOPSReadWrite),$($item.MBPSReadWrite)" | Out-File -FilePath .\out.csv -Append
-}
+
+$output | Export-Csv -Path out.csv -NoTypeInformation
+
