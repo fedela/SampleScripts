@@ -1,5 +1,5 @@
 ﻿param ($ResourceGroup)
-$output = @()
+$diskarray = @()
 
 $VMs = @(Get-AzVM -ResourceGroupName $ResourceGroup)
 
@@ -9,7 +9,7 @@ foreach ($VM in $VMs)
 
     Write-Verbose "$($VM.name) start" 
     $disk = Get-AzDisk -ResourceGroupName $ResourceGroup -DiskName $VM.StorageProfile.OsDisk.Name
-    $output += [PSCustomObject]@{
+    $diskarray += [PSCustomObject]@{
                     "VMName"         = $VM.name
                     "OS"             = $VM.StorageProfile.OsDisk.OsType
                     "DiskType"       = "OS"
@@ -25,7 +25,7 @@ foreach ($VM in $VMs)
     foreach ($DataDisk in $VM.StorageProfile.DataDisks)
     { 
         $disk = Get-AzDisk -ResourceGroupName $ResourceGroup -DiskName $DataDisk.Name
-        $output += [PSCustomObject]@{
+        $diskarray += [PSCustomObject]@{
                         "VMName"         = $VM.name
                         "OS"             = $VM.StorageProfile.OsDisk.OsType
                         "DiskType"       = "Data"
@@ -42,5 +42,5 @@ foreach ($VM in $VMs)
     Write-Verbose "$($VM.name) end"
 }
 
-$output | Export-Csv -Path out.csv -NoTypeInformation
+$diskarray | Export-Csv -Path out.csv -NoTypeInformation
 
